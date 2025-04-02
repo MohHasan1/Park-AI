@@ -1,0 +1,46 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment
+.env
+.venv/
+env/
+venv/
+ENV/
+*.env
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Testing
+htmlcov/
+.coverage
+.tox/
+.nox/
+.pytest_cache/
+
+# Logs
+*.log
+
+# Local db or user files
+*.sqlite3
+*.db
+mydata.json
+
+# Compiled Cython files
+*.so
+
+# Ignore model and image outputs
+# *.pt
+# *.jpg
+# *.png
+outputs/
+
