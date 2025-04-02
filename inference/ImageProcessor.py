@@ -19,7 +19,13 @@ class ImageProcessor:
 
         self.original_image = image.copy()
         return image
-
+    
+    def add_image_direct(self, image):
+        if image is None or not hasattr(image, 'shape'):
+            raise ValueError("Invalid OpenCV image provided.")
+        
+        self.original_image = image.copy()
+    
     def annotate_image(self, results):
         self.all_boxes.clear()
         self.occupied_spots.clear()
@@ -59,6 +65,33 @@ class ImageProcessor:
 
     def get_occupied_spots(self):
         return self.occupied_spots
+
+    def get_total_spots(self):
+        """Total detected parking spots (both occupied and free)."""
+        return len(self.all_boxes)
+
+    def get_parked_spots(self):
+        """Total number of parked vehicles (class_id == 0)."""
+        return len([b for b in self.all_boxes if b["class_id"] == 0])
+
+    def get_empty_spots(self):
+        """Total number of free spots (class_id == 1)."""
+        return len([b for b in self.all_boxes if b["class_id"] == 1])
+    
+    def get_parking_summary(self):
+        """Returns a summary of total, parked, and empty spots."""
+        parked = self.get_parked_spots()
+        empty = self.get_empty_spots()
+        total = parked + empty  # or len(self.all_boxes)
+        parked_indices = self.occupied_spots  # these are the box numbers
+
+        return {
+            "total_spots": total,
+            "parked_count": parked,
+            "empty_count": empty,
+            "parked_indices": parked_indices
+    }
+
 
     def save_and_show(self, output_path="../inference/output/output0.jpg", show=True, resize_dim=(1000, 1000)):
         if self.last_annotated_image is None:
