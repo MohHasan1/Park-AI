@@ -2,7 +2,7 @@ import os
 from ultralytics import YOLO
 
 class ParkAI:
-    def __init__(self, model_path="./inference/park_ai.pt", class_list=None):
+    def __init__(self, model_path="./Park-AI/inference/park_ai.pt", class_list=None):
         self.model_path = model_path
         self.model = YOLO(self.model_path)
         self.class_list = class_list if class_list else ["car", "free"]

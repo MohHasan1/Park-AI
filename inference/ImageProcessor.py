@@ -1,6 +1,7 @@
 import os
 import cv2
 
+
 class ImageProcessor:
     def __init__(self, class_list=None):
         self.original_image = None
@@ -19,13 +20,43 @@ class ImageProcessor:
 
         self.original_image = image.copy()
         return image
-    
+
     def add_image_direct(self, image):
         if image is None or not hasattr(image, 'shape'):
             raise ValueError("Invalid OpenCV image provided.")
-        
+
         self.original_image = image.copy()
-    
+
+    def sort_boxes_top_to_bottom_left_to_right(self, boxes):
+        # Sort boxes top-to-bottom
+        boxes = sorted(boxes, key=lambda b: b["coords"][1])  # y_min
+
+        # Estimate average height
+        heights = [b["coords"][3] - b["coords"][1] for b in boxes]
+        avg_height = sum(heights) / len(heights)
+        row_threshold = avg_height * 0.6  # adjust if needed
+
+        rows = []
+        for box in boxes:
+            y_min = box["coords"][1]
+            placed = False
+            for row in rows:
+                row_y_min = row[0]["coords"][1]
+                if abs(y_min - row_y_min) < row_threshold:
+                    row.append(box)
+                    placed = True
+                    break
+            if not placed:
+                rows.append([box])
+
+        # Now sort each row left-to-right
+        sorted_boxes = []
+        for row in rows:
+            row_sorted = sorted(row, key=lambda b: b["coords"][0])  # x_min
+            sorted_boxes.extend(row_sorted)
+
+        return sorted_boxes
+
     def annotate_image(self, results):
         self.all_boxes.clear()
         self.occupied_spots.clear()
@@ -45,7 +76,9 @@ class ImageProcessor:
                 })
 
         # Sort boxes visually: top-to-bottom, left-to-right
-        self.all_boxes = sorted(self.all_boxes, key=lambda b: (b["coords"][1] // 50, b["coords"][0]))
+        # self.all_boxes = sorted(self.all_boxes, key=lambda b: (b["coords"][1], b["coords"][0]))
+        self.all_boxes = self.sort_boxes_top_to_bottom_left_to_right(
+            self.all_boxes)
 
         for i, box_info in enumerate(self.all_boxes, start=1):
             x_min, y_min, x_max, y_max = box_info["coords"]
@@ -53,8 +86,10 @@ class ImageProcessor:
 
             # Draw box and label
             label = str(i)
-            cv2.rectangle(image, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
-            cv2.putText(image, label, (x_min, y_min - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 255, 0), 2)
+            cv2.rectangle(image, (x_min, y_min),
+                          (x_max, y_max), (0, 255, 0), 2)
+            cv2.putText(image, label, (x_min, y_min - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 255, 0), 2)
 
             # Append the parking spots
             if class_id == 0:
@@ -77,7 +112,7 @@ class ImageProcessor:
     def get_empty_spots(self):
         """Total number of free spots (class_id == 1)."""
         return len([b for b in self.all_boxes if b["class_id"] == 1])
-    
+
     def get_parking_summary(self):
         """Returns a summary of total, parked, and empty spots."""
         parked = self.get_parked_spots()
@@ -90,8 +125,7 @@ class ImageProcessor:
             "parked_count": parked,
             "empty_count": empty,
             "parked_indices": parked_indices
-    }
-
+        }
 
     def save_and_show(self, output_path="../inference/output/output0.jpg", show=True, resize_dim=(1000, 1000)):
         if self.last_annotated_image is None:

@@ -1,16 +1,10 @@
 from Model import ParkAI
 from FileDB import FileDB
 from ImageProcessor import ImageProcessor
-from utils.utils import base64_to_cv2
+from utils.utils import base64_to_cv2, errorJson, successJson
 
-import os
 from flask import Flask, request, jsonify
 
-
-# Define paths
-script_dir = os.path.dirname(os.path.abspath(__file__))
-model_path = os.path.join(script_dir, '..', 'inference', 'park_ai.pt')
-# image_path = os.path.join(script_dir, '..', 'shared', 'images', 'park_4.jpg')
 
 model = ParkAI()
 processor = ImageProcessor()
@@ -18,13 +12,14 @@ db = FileDB()
 
 app = Flask(__name__)
 
+
 @app.route('/process', methods=['POST'])
 def process_image():
     data = request.json
 
     if not data or 'image_base64' not in data:
         print("❌ Missing 'image_base64' in request.")
-        return jsonify({"error": "Missing 'image_base64' in request body."}), 400
+        return jsonify(errorJson("Missing 'image_base64' in request body.")), 400
     else:
         print("📥 Received POST request with base64 image.")
 
@@ -43,18 +38,21 @@ def process_image():
         updated_index = index + 1
         db.update("index", updated_index)
 
-        output_path = f"./inference/output/output{updated_index}.jpg"
+        output_path = f"Park-AI/inference/outputs/output{updated_index}.jpg"
         print(f"💾 Saving result to: {output_path}")
         processor.save_and_show(output_path, show=False)
 
         occupied = processor.get_parking_summary()
         print(f"✅ Occupied spots: {occupied}")
-            
-        return jsonify(processor.get_parking_summary())
+        print(f"Sending success json: {successJson(processor.get_parking_summary())}")
+
+        return jsonify(successJson(processor.get_parking_summary()))
 
     except Exception as e:
         print(f"🚨 Error occurred: {e}")
-        return jsonify({"error": str(e)}), 500
+        print(f"Sending Error json: {errorJson(str(e))}")
+        return jsonify(errorJson(str(e))), 500
+
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5050)
