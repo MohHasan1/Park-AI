@@ -3,7 +3,7 @@ import json
 
 
 class FileDB:
-    def __init__(self, filepath="./Park-AI/inference/filedb.json"):
+    def __init__(self, filepath="./inference/filedb.json"):
         self.filepath = filepath      # Path to the JSON file
         self.data = None              # Dictionary holding key-value pairs
         self._load()                  # Load data from file into self.data

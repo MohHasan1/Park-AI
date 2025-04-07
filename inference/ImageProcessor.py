@@ -7,7 +7,8 @@ class ImageProcessor:
         self.original_image = None
         self.last_annotated_image = None
         self.class_list = class_list if class_list else ["car", "free"]
-        self.occupied_spots = []
+        self.empty_indices = []
+        self.parked_indices = []
         self.all_boxes = []
 
     def add_image(self, image_path):
@@ -59,7 +60,8 @@ class ImageProcessor:
 
     def annotate_image(self, results):
         self.all_boxes.clear()
-        self.occupied_spots.clear()
+        self.empty_indices.clear()
+        self.parked_indices.clear()
         image = self.original_image.copy()
 
         for result in results:
@@ -76,9 +78,7 @@ class ImageProcessor:
                 })
 
         # Sort boxes visually: top-to-bottom, left-to-right
-        # self.all_boxes = sorted(self.all_boxes, key=lambda b: (b["coords"][1], b["coords"][0]))
-        self.all_boxes = self.sort_boxes_top_to_bottom_left_to_right(
-            self.all_boxes)
+        self.all_boxes = self.sort_boxes_top_to_bottom_left_to_right(self.all_boxes)
 
         for i, box_info in enumerate(self.all_boxes, start=1):
             x_min, y_min, x_max, y_max = box_info["coords"]
@@ -91,40 +91,38 @@ class ImageProcessor:
             cv2.putText(image, label, (x_min, y_min - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 255, 0), 2)
 
-            # Append the parking spots
-            if class_id == 0:
-                self.occupied_spots.append(i)
+            # Append the empty spots
+            if class_id == 1:
+                self.empty_indices.append(i)
+            else:
+                self.parked_indices.append(i)
 
         self.last_annotated_image = image
         return image
 
-    def get_occupied_spots(self):
-        return self.occupied_spots
+    def get_empty_indices(self):
+        return self.empty_indices
 
-    def get_total_spots(self):
-        """Total detected parking spots (both occupied and free)."""
-        return len(self.all_boxes)
+    def get_all_indices(self):
+        return self.all_boxes
 
-    def get_parked_spots(self):
-        """Total number of parked vehicles (class_id == 0)."""
-        return len([b for b in self.all_boxes if b["class_id"] == 0])
-
-    def get_empty_spots(self):
-        """Total number of free spots (class_id == 1)."""
-        return len([b for b in self.all_boxes if b["class_id"] == 1])
+    def get_parked_indices(self):
+        return self.parked_indices
 
     def get_parking_summary(self):
         """Returns a summary of total, parked, and empty spots."""
-        parked = self.get_parked_spots()
-        empty = self.get_empty_spots()
-        total = parked + empty  # or len(self.all_boxes)
-        parked_indices = self.occupied_spots  # these are the box numbers
+        parked = len(self.get_parked_indices())
+        empty = len(self.get_empty_indices())
+        total = len(self.get_all_indices())
+        empty_indices = self.get_empty_indices()
+        parked_indices = self.get_parked_indices()
 
         return {
             "total_spots": total,
             "parked_count": parked,
             "empty_count": empty,
-            "parked_indices": parked_indices
+            "empty_indices": empty_indices,
+            "parked_indices": parked_indices,
         }
 
     def save_and_show(self, output_path="../inference/output/output0.jpg", show=True, resize_dim=(1000, 1000)):
