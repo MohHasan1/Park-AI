@@ -19,8 +19,8 @@ def base64_to_cv2(base64_str):
 
 
 def errorJson(error_message):
-    return {"data": "", "status": False, "error_msg": error_message}
+    return {"data": error_message, "status": False}
 
 
 def successJson(data):
-    return {"data": data, "status": True, "error_msg": ""}
+    return {"data": data, "status": True}

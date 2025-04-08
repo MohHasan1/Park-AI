@@ -38,16 +38,15 @@ def process_image():
         updated_index = index + 1
         db.update("index", updated_index)
 
-        output_path = f"Park-AI/inference/outputs/output{updated_index}.jpg"
+        output_path = f"./inference/outputs/output{updated_index}.jpg"
         print(f"💾 Saving result to: {output_path}")
         processor.save_and_show(output_path, show=False)
 
-        occupied = processor.get_parking_summary()
-        print(f"✅ Occupied spots: {occupied}")
-        print(f"Sending success json: {successJson(processor.get_parking_summary())}")
+        summary = processor.get_parking_summary()
+        print(f"✅ Final Result: {summary}")
+        print(f"😃 Sending success json to ESP32-CAM....")
 
         return jsonify(successJson(processor.get_parking_summary()))
-
     except Exception as e:
         print(f"🚨 Error occurred: {e}")
         print(f"Sending Error json: {errorJson(str(e))}")
